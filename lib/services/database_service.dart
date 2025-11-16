@@ -111,25 +111,42 @@ class DatabaseService {
     }
   }
 
-  // Métodos de preferencias (implementación básica)
+  // Métodos de preferencias y atributos
   Future<Map<String, dynamic>> getPreferences() async {
     try {
-      AppLogger.info('Fetching preferences');
+      AppLogger.info('Fetching preferences from Firestore');
       final doc = await _firestore.collection('preferences').doc('settings').get();
-      if (doc.exists) {
-        return doc.data() ?? {};
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        AppLogger.info('Preferences loaded: $data');
+        return data;
       }
-      return {};
+
+      // Retornar valores por defecto si no existe el documento
+      AppLogger.info('No preferences found, returning defaults');
+      final defaults = {
+        'costPerBag': 500,
+        'whatsappMessage': '¡Hola {nombre} 👋! Ya podés pasar a retirar tu ropa 🧼✨. Costo: \${costo}. Si deseas transferir, podés hacerlo al alias: matteo.peirano.mp. ¡Gracias por elegirnos! 😊🙌',
+      };
+      return defaults;
     } catch (e, stackTrace) {
       AppLogger.error('Error getting preferences: $e', e, stackTrace);
-      return {};
+      // Retornar defaults en caso de error
+      return {
+        'costPerBag': 500,
+        'whatsappMessage': '¡Hola {nombre} 👋! Ya podés pasar a retirar tu ropa 🧼✨. Costo: \${costo}. Si deseas transferir, podés hacerlo al alias: matteo.peirano.mp. ¡Gracias por elegirnos! 😊🙌',
+      };
     }
   }
 
   Future<void> updatePreferences(Map<String, dynamic> data) async {
     try {
-      AppLogger.info('Updating preferences: $data');
-      await _firestore.collection('preferences').doc('settings').set(data, SetOptions(merge: true));
+      AppLogger.info('Updating preferences in Firestore: $data');
+      await _firestore.collection('preferences').doc('settings').set(
+        data,
+        SetOptions(merge: true),
+      );
       AppLogger.info('Preferences updated successfully');
     } catch (e, stackTrace) {
       AppLogger.error('Error updating preferences: $e', e, stackTrace);
@@ -139,9 +156,15 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getAllAttributes() async {
     try {
-      AppLogger.info('Fetching all attributes');
-      final snapshot = await _firestore.collection('attributes').get();
-      final attributes = snapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+      AppLogger.info('Fetching all attributes from Firestore');
+      final snapshot = await _firestore.collection('attributes').orderBy('name').get();
+      final attributes = snapshot.docs
+          .map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return data;
+          })
+          .toList();
       AppLogger.info('Fetched ${attributes.length} attributes');
       return attributes;
     } catch (e, stackTrace) {
@@ -152,9 +175,16 @@ class DatabaseService {
 
   Future<String> insertAttribute(Map<String, dynamic> attribute) async {
     try {
-      AppLogger.info('Inserting attribute: $attribute');
+      AppLogger.info('Inserting attribute into Firestore: $attribute');
+
+      // Validar datos antes de insertar
+      if (!attribute.containsKey('name') || !attribute.containsKey('price')) {
+        AppLogger.error('Invalid attribute data: missing name or price');
+        return '';
+      }
+
       final docRef = await _firestore.collection('attributes').add(attribute);
-      AppLogger.info('Attribute inserted with docId: ${docRef.id}');
+      AppLogger.info('Attribute inserted successfully with ID: ${docRef.id}');
       return docRef.id;
     } catch (e, stackTrace) {
       AppLogger.error('Error inserting attribute: $e', e, stackTrace);
@@ -164,7 +194,7 @@ class DatabaseService {
 
   Future<void> deleteAttribute(String id) async {
     try {
-      AppLogger.info('Deleting attribute with id: $id');
+      AppLogger.info('Deleting attribute with id: $id from Firestore');
       await _firestore.collection('attributes').doc(id).delete();
       AppLogger.info('Attribute deleted successfully');
     } catch (e, stackTrace) {
