@@ -110,4 +110,66 @@ class DatabaseService {
       return [];
     }
   }
+
+  // Métodos de preferencias (implementación básica)
+  Future<Map<String, dynamic>> getPreferences() async {
+    try {
+      AppLogger.info('Fetching preferences');
+      final doc = await _firestore.collection('preferences').doc('settings').get();
+      if (doc.exists) {
+        return doc.data() ?? {};
+      }
+      return {};
+    } catch (e, stackTrace) {
+      AppLogger.error('Error getting preferences: $e', e, stackTrace);
+      return {};
+    }
+  }
+
+  Future<void> updatePreferences(Map<String, dynamic> data) async {
+    try {
+      AppLogger.info('Updating preferences: $data');
+      await _firestore.collection('preferences').doc('settings').set(data, SetOptions(merge: true));
+      AppLogger.info('Preferences updated successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error updating preferences: $e', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllAttributes() async {
+    try {
+      AppLogger.info('Fetching all attributes');
+      final snapshot = await _firestore.collection('attributes').get();
+      final attributes = snapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+      AppLogger.info('Fetched ${attributes.length} attributes');
+      return attributes;
+    } catch (e, stackTrace) {
+      AppLogger.error('Error getting attributes: $e', e, stackTrace);
+      return [];
+    }
+  }
+
+  Future<String> insertAttribute(Map<String, dynamic> attribute) async {
+    try {
+      AppLogger.info('Inserting attribute: $attribute');
+      final docRef = await _firestore.collection('attributes').add(attribute);
+      AppLogger.info('Attribute inserted with docId: ${docRef.id}');
+      return docRef.id;
+    } catch (e, stackTrace) {
+      AppLogger.error('Error inserting attribute: $e', e, stackTrace);
+      return '';
+    }
+  }
+
+  Future<void> deleteAttribute(String id) async {
+    try {
+      AppLogger.info('Deleting attribute with id: $id');
+      await _firestore.collection('attributes').doc(id).delete();
+      AppLogger.info('Attribute deleted successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error deleting attribute: $e', e, stackTrace);
+      rethrow;
+    }
+  }
 }

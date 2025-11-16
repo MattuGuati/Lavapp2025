@@ -148,3 +148,190 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
         );
         return;
       }
+      if (bagCount <= 0 && extras.isEmpty && counterExtras.isEmpty) {
+        AppLogger.warning('Validation failed: No bags or extras selected');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debe seleccionar al menos cantidad de bolsas o extras.')),
+        );
+        return;
+      }
+      final ticket = {
+        'nombre': _nameController.text,
+        'celular': _phoneController.text,
+        'cantidadBolsas': bagCount,
+        'extras': {
+          ...extras,
+          ...counterExtras.map((k, v) {
+            final attr = attributes.firstWhere((attr) => attr['name'] == k);
+            return MapEntry(k, v * (attr['price'] as int));
+          }),
+        },
+        'estado': 'En Proceso',
+      };
+      AppLogger.info('Ticket data to be created: $ticket');
+      Navigator.pop(context, ticket);
+    } catch (e, stackTrace) {
+      AppLogger.error('Error creating ticket: $e', e, stackTrace);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al crear el ticket: $e')),
+      );
+    }
+  }
+
+  void _cancel() {
+    AppLogger.info('Cancelling ticket creation');
+    Navigator.pop(context);
+  }
+
+  @override
+  void dispose() {
+    AppLogger.info('Disposing NewTicketScreen');
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    AppLogger.info('Building NewTicketScreen');
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Nuevo Ticket', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.blue,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Nombre',
+                  suffixIcon: suggestions.isNotEmpty
+                      ? PopupMenuButton<Map<String, dynamic>>(
+                          icon: const Icon(Icons.arrow_drop_down),
+                          onSelected: (client) {
+                            AppLogger.info('Selected client from suggestions: ${client['name']}');
+                            _nameController.text = client['name'];
+                            _phoneController.text = client['phone'];
+                            setState(() => suggestions = []);
+                          },
+                          itemBuilder: (context) => suggestions.map((client) {
+                            return PopupMenuItem(
+                              value: client,
+                              child: ListTile(
+                                title: Text(client['name']),
+                                subtitle: Text('Tel: ${client['phone']}'),
+                              ),
+                            );
+                          }).toList(),
+                        )
+                      : null,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Teléfono',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(icon: const Icon(Icons.remove), onPressed: _decrementBags),
+                  Text('$bagCount', style: const TextStyle(fontSize: 16)),
+                  IconButton(icon: const Icon(Icons.add), onPressed: _incrementBags),
+                  const SizedBox(width: 8),
+                  const Text('Cantidad de bolsas', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Extras (seleccione los que apliquen)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ...attributes.where((attr) => (attr['hasCounter'] ?? false) == false).map((attr) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: CheckboxListTile(
+                      title: Text('${attr['name']} (\$${attr['price']})', style: const TextStyle(fontSize: 16)),
+                      value: extras.containsKey(attr['name']),
+                      onChanged: (value) => _toggleExtra(attr['name'], attr['price'] as int, false),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  )),
+              const SizedBox(height: 20),
+              const Text(
+                'Extras con Contador',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              ...attributes.where((attr) => (attr['hasCounter'] ?? false) == true).map((attr) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('${attr['name']} (\$${attr['price']})', style: const TextStyle(fontSize: 16)),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: () => _decrementCounterExtra(attr['name'], attr['price'] as int),
+                            ),
+                            Text('${counterExtras[attr['name']] ?? 0}', style: const TextStyle(fontSize: 16)),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () => _incrementCounterExtra(attr['name'], attr['price'] as int),
+                            ),
+                            Checkbox(
+                              value: counterExtras.containsKey(attr['name']),
+                              onChanged: (value) => _toggleExtra(attr['name'], attr['price'] as int, true),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: _createTicket,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Crear Ticket'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _cancel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

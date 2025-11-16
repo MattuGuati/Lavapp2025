@@ -105,8 +105,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
         _showLoginDialog();
       }
     } catch (e, stackTrace) {
-      print('Error checking session: $e\
-$stackTrace'); // Usamos print en lugar de AppLogger.error
+      print('Error checking session: $e\n$stackTrace'); // Usamos print en lugar de AppLogger.error
       setState(() {
         isLoading = false;
       });
@@ -359,8 +358,7 @@ $stackTrace'); // Usamos print en lugar de AppLogger.error
                           }
                         }
                       } catch (e, stackTrace) {
-                        print('Error during login: $e\
-$stackTrace'); // Usamos print en lugar de AppLogger.error
+                        print('Error during login: $e\n$stackTrace'); // Usamos print en lugar de AppLogger.error
                         setDialogState(() {
                           errorMessage = 'Error al iniciar sesión: $e';
                         });
