@@ -101,13 +101,16 @@ class _ConsultTicketsScreenState extends State<ConsultTicketsScreen> {
     AppLogger.info('Searching tickets with query: $query');
     setState(() {
       searchQuery = query.toLowerCase();
-      filteredTickets = tickets.where((ticket) {
+      var tempTickets = tickets.where((ticket) {
         final estado = ticket['estado'] as String?;
         final nombre = ticket['nombre'] as String? ?? '';
         final celular = ticket['celular'] as String? ?? '';
         return (showAll || estado != 'Entregado') &&
             (nombre.toLowerCase().contains(searchQuery) || celular.toLowerCase().contains(searchQuery));
       }).toList();
+
+      // Aplicar filtro por fecha
+      filteredTickets = _filterByDate(tempTickets);
       AppLogger.info('Filtered tickets: ${filteredTickets.length}');
     });
   }
@@ -217,6 +220,22 @@ class _ConsultTicketsScreenState extends State<ConsultTicketsScreen> {
                 ),
                 const Text('Mostrar tickets entregados'),
               ],
+            ),
+            const SizedBox(height: 10),
+            // Filtros por fecha
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterButton('Todos'),
+                  const SizedBox(width: 8),
+                  _buildFilterButton('Hoy'),
+                  const SizedBox(width: 8),
+                  _buildFilterButton('Esta Semana'),
+                  const SizedBox(width: 8),
+                  _buildFilterButton('Vencidos'),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
             Expanded(
