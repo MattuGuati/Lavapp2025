@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lavapp/screens/ticket_list_screen.dart';
 import 'package:lavapp/screens/new_ticket_screen.dart';
 import 'package:lavapp/screens/edit_ticket_screen.dart';
@@ -26,6 +27,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'LavApp',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', 'ES'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('es', 'ES'),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

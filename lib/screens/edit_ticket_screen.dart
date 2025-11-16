@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../services/database_service.dart';
 
 class EditTicketScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _EditTicketScreenState extends State<EditTicketScreen> {
   List<Map<String, dynamic>> attributes = [];
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  DateTime? fechaEntrega; // Fecha programada de entrega
 
   @override
   void initState() {
@@ -41,6 +43,15 @@ class _EditTicketScreenState extends State<EditTicketScreen> {
     state = widget.ticket['estado'] ?? 'En Proceso';
     _nameController.text = name;
     _phoneController.text = phone;
+    // Cargar fecha de entrega si existe
+    if (widget.ticket['fechaEntrega'] != null) {
+      try {
+        fechaEntrega = DateTime.parse(widget.ticket['fechaEntrega'] as String);
+      } catch (e) {
+        debugPrint('Error parsing fechaEntrega: $e');
+        fechaEntrega = null;
+      }
+    }
     _loadAttributes();
   }
 
@@ -114,6 +125,24 @@ class _EditTicketScreenState extends State<EditTicketScreen> {
     });
   }
 
+  Future<void> _selectFechaEntrega() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: fechaEntrega ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('es', 'ES'),
+      helpText: 'Seleccionar fecha de entrega',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+    );
+    if (picked != null && picked != fechaEntrega) {
+      setState(() {
+        fechaEntrega = picked;
+      });
+    }
+  }
+
   void _saveTicket() {
     final updatedTicket = {
       'nombre': _nameController.text,
@@ -124,6 +153,7 @@ class _EditTicketScreenState extends State<EditTicketScreen> {
         ...counterExtras.map((k, v) => MapEntry(k, v * (attributes.firstWhere((attr) => attr['name'] == k)['price'] as int)))
       },
       'estado': state,
+      'fechaEntrega': fechaEntrega?.toIso8601String(),
       'usuario': widget.ticket['usuario'],
       'timestamp': widget.ticket['timestamp'],
       'docId': widget.ticket['docId'],
@@ -163,6 +193,23 @@ class _EditTicketScreenState extends State<EditTicketScreen> {
                   fillColor: Colors.grey[100],
                 ),
                 keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 15),
+              ElevatedButton.icon(
+                onPressed: _selectFechaEntrega,
+                icon: const Icon(Icons.calendar_today),
+                label: Text(
+                  fechaEntrega != null
+                      ? 'Fecha de entrega: ${DateFormat('dd/MM/yyyy').format(fechaEntrega!)}'
+                      : 'Seleccionar fecha de entrega',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: fechaEntrega != null ? Colors.green[100] : Colors.grey[200],
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
               const SizedBox(height: 15),
               Row(

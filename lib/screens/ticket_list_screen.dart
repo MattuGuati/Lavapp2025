@@ -58,11 +58,11 @@ class _TicketListScreenState extends State<TicketListScreen> {
             AppLogger.info('User data loaded successfully for: $savedUsername');
 
             // Configurar API service con la API key del usuario si existe
-            if (currentUserData!.whatsappApiKey != null &&
-                currentUserData!.whatsappApiKey!.isNotEmpty) {
+            final whatsappKey = currentUserData?.whatsappApiKey;
+            if (whatsappKey != null && whatsappKey.isNotEmpty) {
               apiService = ApiService(
-                apiKey: currentUserData!.whatsappApiKey,
-                countryCode: currentUserData!.countryCode,
+                apiKey: whatsappKey,
+                countryCode: currentUserData?.countryCode,
               );
             }
 
@@ -281,11 +281,11 @@ class _TicketListScreenState extends State<TicketListScreen> {
                             currentUserData = UserModel.fromMap(userData);
 
                             // Configurar API service con la API key del usuario si existe
-                            if (currentUserData!.whatsappApiKey != null &&
-                                currentUserData!.whatsappApiKey!.isNotEmpty) {
+                            final whatsappKey = currentUserData?.whatsappApiKey;
+                            if (whatsappKey != null && whatsappKey.isNotEmpty) {
                               apiService = ApiService(
-                                apiKey: currentUserData!.whatsappApiKey,
-                                countryCode: currentUserData!.countryCode,
+                                apiKey: whatsappKey,
+                                countryCode: currentUserData?.countryCode,
                               );
                             }
 
@@ -337,11 +337,11 @@ class _TicketListScreenState extends State<TicketListScreen> {
                             AppLogger.info('Loaded data for newly created user: $username');
 
                             // Configurar API service si tiene whatsappApiKey
-                            if (currentUserData!.whatsappApiKey != null &&
-                                currentUserData!.whatsappApiKey!.isNotEmpty) {
+                            final whatsappKey = currentUserData?.whatsappApiKey;
+                            if (whatsappKey != null && whatsappKey.isNotEmpty) {
                               apiService = ApiService(
-                                apiKey: currentUserData!.whatsappApiKey,
-                                countryCode: currentUserData!.countryCode,
+                                apiKey: whatsappKey,
+                                countryCode: currentUserData?.countryCode,
                               );
                             }
                           }
@@ -744,7 +744,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
 
             if (apiKey == 'default') {
               errorMessage = 'WhatsApp no conectado. Por favor, contacte al administrador para configurar su cuenta de WhatsApp.';
-            } else if (currentUserData?.whatsappApiKey == null || currentUserData!.whatsappApiKey!.isEmpty) {
+            } else if (currentUserData?.whatsappApiKey == null || currentUserData?.whatsappApiKey?.isEmpty == true) {
               errorMessage = 'WhatsApp no conectado. Su cuenta no tiene configurada una API key de WhatsApp. Contacte al administrador.';
             } else {
               errorMessage = 'WhatsApp no conectado. Escanee el código QR en https://lavapp.innovacore.ar/api/qr/$apiKey';

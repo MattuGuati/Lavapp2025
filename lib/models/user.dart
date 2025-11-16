@@ -1,3 +1,5 @@
+import '../utils/logger.dart';
+
 class UserModel {
   final String username;
   final String password;
@@ -56,20 +58,20 @@ class UserModel {
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
-    print('DEBUG UserModel.fromMap: Starting parse with map keys: ${map.keys.toList()}');
+    AppLogger.debug('UserModel.fromMap: Starting parse with map keys: ${map.keys.toList()}');
 
     // Parse campos string de manera segura con try-catch individual
     String parseString(String fieldName, dynamic value, String defaultValue) {
       try {
         if (value == null) {
-          print('DEBUG UserModel.fromMap: $fieldName is null, using default: $defaultValue');
+          AppLogger.debug('UserModel.fromMap: $fieldName is null, using default: $defaultValue');
           return defaultValue;
         }
         final result = value.toString();
-        print('DEBUG UserModel.fromMap: $fieldName = "$result"');
+        AppLogger.debug('UserModel.fromMap: $fieldName = "$result"');
         return result;
       } catch (e) {
-        print('DEBUG ERROR UserModel.fromMap: Failed to parse $fieldName: $e');
+        AppLogger.error('UserModel.fromMap: Failed to parse $fieldName: $e');
         return defaultValue;
       }
     }
@@ -77,14 +79,14 @@ class UserModel {
     String? parseNullableString(String fieldName, dynamic value) {
       try {
         if (value == null) {
-          print('DEBUG UserModel.fromMap: $fieldName is null');
+          AppLogger.debug('UserModel.fromMap: $fieldName is null');
           return null;
         }
         final result = value.toString();
-        print('DEBUG UserModel.fromMap: $fieldName = "$result"');
+        AppLogger.debug('UserModel.fromMap: $fieldName = "$result"');
         return result;
       } catch (e) {
-        print('DEBUG ERROR UserModel.fromMap: Failed to parse $fieldName: $e');
+        AppLogger.error('UserModel.fromMap: Failed to parse $fieldName: $e');
         return null;
       }
     }
@@ -94,7 +96,7 @@ class UserModel {
     try {
       if (map['createdAt'] != null) {
         final createdAtValue = map['createdAt'];
-        print('DEBUG UserModel.fromMap: createdAt type: ${createdAtValue.runtimeType}');
+        AppLogger.debug('UserModel.fromMap: createdAt type: ${createdAtValue.runtimeType}');
         if (createdAtValue is String) {
           parsedCreatedAt = DateTime.parse(createdAtValue);
         } else if (createdAtValue is DateTime) {
@@ -104,14 +106,14 @@ class UserModel {
           try {
             parsedCreatedAt = (createdAtValue as dynamic).toDate() as DateTime;
           } catch (e) {
-            print('DEBUG ERROR UserModel.fromMap: Failed to parse createdAt as Timestamp: $e');
+            AppLogger.error('UserModel.fromMap: Failed to parse createdAt as Timestamp: $e');
             parsedCreatedAt = DateTime.now();
           }
         }
       }
-      print('DEBUG UserModel.fromMap: createdAt parsed successfully: $parsedCreatedAt');
+      AppLogger.debug('UserModel.fromMap: createdAt parsed successfully: $parsedCreatedAt');
     } catch (e) {
-      print('DEBUG ERROR UserModel.fromMap: Failed to parse createdAt: $e');
+      AppLogger.error('UserModel.fromMap: Failed to parse createdAt: $e');
       parsedCreatedAt = DateTime.now();
     }
 
@@ -120,7 +122,7 @@ class UserModel {
     try {
       if (map['permissions'] != null) {
         final perms = map['permissions'];
-        print('DEBUG UserModel.fromMap: permissions type: ${perms.runtimeType}');
+        AppLogger.debug('UserModel.fromMap: permissions type: ${perms.runtimeType}');
         if (perms is Map) {
           parsedPermissions = {};
           perms.forEach((key, value) {
@@ -128,16 +130,16 @@ class UserModel {
               final keyStr = key.toString();
               final valueBool = value == true || value.toString().toLowerCase() == 'true';
               parsedPermissions[keyStr] = valueBool;
-              print('DEBUG UserModel.fromMap: permission $keyStr = $valueBool');
+              AppLogger.debug('UserModel.fromMap: permission $keyStr = $valueBool');
             } catch (e) {
-              print('DEBUG ERROR UserModel.fromMap: Failed to parse permission $key: $e');
+              AppLogger.error('UserModel.fromMap: Failed to parse permission $key: $e');
             }
           });
         }
       }
-      print('DEBUG UserModel.fromMap: permissions parsed: $parsedPermissions');
+      AppLogger.debug('UserModel.fromMap: permissions parsed: $parsedPermissions');
     } catch (e) {
-      print('DEBUG ERROR UserModel.fromMap: Failed to parse permissions: $e');
+      AppLogger.error('UserModel.fromMap: Failed to parse permissions: $e');
       parsedPermissions = _defaultPermissions();
     }
 
@@ -152,11 +154,10 @@ class UserModel {
         permissions: parsedPermissions,
         createdAt: parsedCreatedAt,
       );
-      print('DEBUG UserModel.fromMap: Successfully created UserModel for ${result.username}');
+      AppLogger.debug('UserModel.fromMap: Successfully created UserModel for ${result.username}');
       return result;
     } catch (e, st) {
-      print('DEBUG ERROR UserModel.fromMap: Failed to create UserModel: $e');
-      print('DEBUG ERROR UserModel.fromMap: Stack trace: $st');
+      AppLogger.error('UserModel.fromMap: Failed to create UserModel: $e', e, st);
       rethrow;
     }
   }

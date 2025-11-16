@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../services/database_service.dart';
 import '../utils/logger.dart';
 
@@ -20,6 +21,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   List<Map<String, dynamic>> clients = [];
   List<Map<String, dynamic>> suggestions = [];
   List<Map<String, dynamic>> attributes = [];
+  DateTime? fechaEntrega; // Fecha programada de entrega
 
   @override
   void initState() {
@@ -138,16 +140,81 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     });
   }
 
+  Future<void> _selectFechaEntrega() async {
+    AppLogger.info('Opening date picker for delivery date');
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: fechaEntrega ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('es', 'ES'),
+      helpText: 'Seleccionar fecha de entrega',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+    );
+    if (picked != null && picked != fechaEntrega) {
+      AppLogger.info('Selected delivery date: ${picked.toIso8601String()}');
+      setState(() {
+        fechaEntrega = picked;
+      });
+    }
+  }
+
   void _createTicket() {
     try {
       AppLogger.info('Creating ticket...');
-      if (_nameController.text.isEmpty || _phoneController.text.isEmpty) {
-        AppLogger.warning('Validation failed: Name or phone number is empty');
+
+      // Trim whitespace from inputs
+      final name = _nameController.text.trim();
+      final phone = _phoneController.text.trim();
+
+      // Validate name
+      if (name.isEmpty) {
+        AppLogger.warning('Validation failed: Name is empty');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Por favor, ingrese el nombre y el número de teléfono.')),
+          const SnackBar(content: Text('Por favor, ingrese el nombre del cliente.')),
         );
         return;
       }
+
+      if (name.length < 2) {
+        AppLogger.warning('Validation failed: Name too short');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('El nombre debe tener al menos 2 caracteres.')),
+        );
+        return;
+      }
+
+      // Validate phone
+      if (phone.isEmpty) {
+        AppLogger.warning('Validation failed: Phone is empty');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Por favor, ingrese el número de teléfono.')),
+        );
+        return;
+      }
+
+      // Phone should contain only digits and common separators
+      final phoneRegex = RegExp(r'^[\d\s\-\+\(\)]+$');
+      if (!phoneRegex.hasMatch(phone)) {
+        AppLogger.warning('Validation failed: Invalid phone format');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('El número de teléfono contiene caracteres inválidos.')),
+        );
+        return;
+      }
+
+      // Phone should have at least 6 digits
+      final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+      if (digitsOnly.length < 6) {
+        AppLogger.warning('Validation failed: Phone too short');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('El número de teléfono debe tener al menos 6 dígitos.')),
+        );
+        return;
+      }
+
+      // Validate at least one service selected
       if (bagCount <= 0 && extras.isEmpty && counterExtras.isEmpty) {
         AppLogger.warning('Validation failed: No bags or extras selected');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -155,9 +222,10 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
         );
         return;
       }
+
       final ticket = {
-        'nombre': _nameController.text,
-        'celular': _phoneController.text,
+        'nombre': name,
+        'celular': phone,
         'cantidadBolsas': bagCount,
         'extras': {
           ...extras,
@@ -167,6 +235,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
           }),
         },
         'estado': 'En Proceso',
+        'fechaEntrega': fechaEntrega?.toIso8601String(),
       };
       AppLogger.info('Ticket data to be created: $ticket');
       Navigator.pop(context, ticket);
@@ -244,6 +313,23 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                   fillColor: Colors.grey[100],
                 ),
                 keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 15),
+              ElevatedButton.icon(
+                onPressed: _selectFechaEntrega,
+                icon: const Icon(Icons.calendar_today),
+                label: Text(
+                  fechaEntrega != null
+                      ? 'Fecha de entrega: ${DateFormat('dd/MM/yyyy').format(fechaEntrega!)}'
+                      : 'Seleccionar fecha de entrega',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: fechaEntrega != null ? Colors.green[100] : Colors.grey[200],
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
               const SizedBox(height: 15),
               Row(
