@@ -1,0 +1,22 @@
+{
+  "name": "lavapp-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp bot multi-session para LavApp",
+  "main": "src/whatsapp-bot-multisession.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/whatsapp-bot-multisession.js",
+    "dev": "nodemon src/whatsapp-bot-multisession.js"
+  },
+  "keywords": ["whatsapp", "bot", "baileys", "lavapp"],
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "qr-image": "^3.2.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "author": "InnovaCore",
+  "license": "ISC"
+}
